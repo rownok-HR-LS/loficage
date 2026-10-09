@@ -5,17 +5,23 @@ let reverb = null;
 let noise = null;
 let volume = 0.7;
 
-export function initAudio() {
-  if (ctx) {
+/** custom: optional context (an OfflineAudioContext is used by the sound tests). */
+export function initAudio(custom) {
+  if (custom) ctx = custom;
+  if (ctx && !custom) {
     if (ctx.state === 'suspended') ctx.resume();
     return;
   }
-  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  ctx ??= new (window.AudioContext || window.webkitAudioContext)();
   master = ctx.createGain();
   master.gain.value = volume;
+  // a fast limiter: it only catches peaks, so each shot keeps its sharp attack (the old compressor squashed it)
   const comp = ctx.createDynamicsCompressor();
-  comp.threshold.value = -14;
-  comp.ratio.value = 4;
+  comp.threshold.value = -4;
+  comp.knee.value = 2;
+  comp.ratio.value = 20;
+  comp.attack.value = 0.001;
+  comp.release.value = 0.12;
   master.connect(comp).connect(ctx.destination);
 
   // white noise buffer
@@ -39,6 +45,7 @@ export function initAudio() {
   const rvGain = ctx.createGain();
   rvGain.gain.value = 0.35;
   reverb.connect(rvGain).connect(master);
+  loadSamples();
 }
 
 export function setVolume(v) {
@@ -150,12 +157,138 @@ const GUNS = {
   },
 };
 
-/** pos null = our own gun. dist in metres for distance muffling. */
-export function playShot(sound, pos = null, dist = 0) {
+// ---------------------------------------------------------------- recorded gunshots
+// Real recordings from the CC0 "Free Firearm Sound Library" (see scripts/sfx.mjs), 3 takes per gun.
+const SAMPLE_SETS = { ak: 3, m4: 3, awp: 3, deagle: 3 };
+const samples = {};
+let samplesRequested = false;
+const sampleLoads = [];
+
+/** Resolves once every recording has loaded (or failed). */
+export function samplesReady() {
+  return Promise.allSettled(sampleLoads);
+}
+
+function loadSamples() {
+  if (samplesRequested) return;
+  samplesRequested = true;
+  const base = import.meta.env.BASE_URL;
+  for (const [id, n] of Object.entries(SAMPLE_SETS)) {
+    samples[id] = [];
+    for (let i = 1; i <= n; i++) {
+      const p = fetch(`${base}sfx/${id}${i}.wav`)
+        .then((r) => r.arrayBuffer())
+        .then((b) => ctx.decodeAudioData(b))
+        .then((buf) => samples[id].push(buf))
+        .catch(() => {}); // falls back to the synthesised shot
+      sampleLoads.push(p);
+    }
+  }
+}
+
+// Per-gun voicing of the recordings.
+// weight: extra low-end "thump" (a saturated low band mixed back in, the way game audio fattens real shots)
+// presence: lift around 2.8 kHz for the crack; tail: seconds of echo kept (suppressed guns are short)
+const VOICE = {
+  ak: { rate: 1.0, gain: 1.0, weight: 0.65, presence: 3 },
+  m4: { rate: 1.04, gain: 0.7, weight: 0.35, presence: -2, lowpass: 2600, tail: 0.32 },
+  awp: { rate: 0.97, gain: 1.15, weight: 0.85, presence: 2.5 },
+  deagle: { rate: 0.9, gain: 1.05, weight: 0.8, presence: 3.5 },
+};
+
+let shaper = null;
+function saturator() {
+  if (shaper) return shaper;
+  const n = 1024;
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    curve[i] = Math.tanh(x * 3) / Math.tanh(3);
+  }
+  shaper = curve;
+  return curve;
+}
+
+// the last shot from each gun owner, so a new shot can cut the previous echo (no mush when spraying)
+const voices = new Map();
+
+/** pos null = our own gun. dist in metres for distance muffling. key identifies the shooter. */
+export function playShot(sound, pos = null, dist = 0, key = 'me') {
   if (!ctx) return;
-  const quiet = sound === 'm4';
-  const out = output(pos, pos ? 1.4 : 0.55, dist, quiet ? 0.15 : 0.6);
-  GUNS[sound]?.(out, ctx.currentTime);
+  loadSamples();
+  const set = samples[sound];
+  const v = VOICE[sound];
+  if (!set || !set.length || !v) {
+    const quiet = sound === 'm4';
+    const out = output(pos, pos ? 1.4 : 0.55, dist, quiet ? 0.15 : 0.6);
+    GUNS[sound]?.(out, ctx.currentTime);
+    return;
+  }
+  const t = ctx.currentTime;
+  const far = Math.min(1, dist / 80);
+
+  // duck the previous shot's echo from this shooter (its blast has already played)
+  const prev = voices.get(key);
+  if (prev && t - prev.t < 3) {
+    const g = prev.gain.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(0, t + 0.06);
+  }
+
+  // shared output: direct for us, 3D for others; recordings carry their own outdoor echo,
+  // so only distant shots get extra reverb
+  const out = output(pos, (pos ? 1.3 : 0.95) * v.gain, dist, far * 0.3);
+  const voice = ctx.createGain();
+  voice.connect(out);
+  if (v.tail) {
+    voice.gain.setValueAtTime(1, t);
+    voice.gain.setValueAtTime(1, t + 0.05);
+    voice.gain.exponentialRampToValueAtTime(0.01, t + v.tail);
+  }
+  voices.set(key, { gain: voice, t });
+
+  const src = ctx.createBufferSource();
+  src.buffer = set[Math.floor(Math.random() * set.length)];
+  src.playbackRate.value = v.rate * (0.97 + Math.random() * 0.06);
+
+  // dry path with a presence curve (and a suppressor filter for the M4A1-S)
+  const pres = ctx.createBiquadFilter();
+  pres.type = 'peaking';
+  pres.frequency.value = 2800;
+  pres.Q.value = 0.9;
+  pres.gain.value = v.presence;
+  const head = pres;
+  if (v.lowpass) {
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = v.lowpass;
+    lp.Q.value = 0.7;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 120;
+    pres.connect(lp).connect(hp).connect(voice);
+  } else {
+    pres.connect(voice);
+  }
+  src.connect(head);
+
+  // weight path: low band, softly saturated, mixed back in for chest-thumping punch
+  const weight = v.weight * (1 - far * 0.7);
+  if (weight > 0.02) {
+    const low = ctx.createBiquadFilter();
+    low.type = 'lowpass';
+    low.frequency.value = 190;
+    low.Q.value = 0.8;
+    const drive = ctx.createGain();
+    drive.gain.value = 2.2;
+    const sat = ctx.createWaveShaper();
+    sat.curve = saturator();
+    const amt = ctx.createGain();
+    amt.gain.value = weight;
+    src.connect(low).connect(drive).connect(sat).connect(amt).connect(voice);
+  }
+  src.start(t);
 }
 
 /** Knife swing; hit 0 = air, 1 = flesh, 2 = wall. */

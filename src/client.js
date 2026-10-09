@@ -114,9 +114,9 @@ export class Client {
     this.vm = { kick: 0, swayX: 0, swayY: 0, bob: 0, holder: null, flash: null, flashUntil: 0, roll: 0 };
     this.vmScene = new THREE.Scene();
     this.vmScene.environment = scene.environment;
-    this.vmScene.environmentIntensity = 0.25;
-    this.vmScene.add(new THREE.HemisphereLight('#e8e4dc', '#6b5a48', 0.8));
-    const key = new THREE.DirectionalLight('#fff1dc', 1.7);
+    this.vmScene.environmentIntensity = 0.14;
+    this.vmScene.add(new THREE.HemisphereLight('#e8e4dc', '#6b5a48', 0.6));
+    const key = new THREE.DirectionalLight('#fff1dc', 1.45);
     key.position.set(-0.5, 1, 0.6);
     this.vmScene.add(key);
     this.vmCamera = new THREE.PerspectiveCamera(56, 1, 0.01, 10);
@@ -614,7 +614,7 @@ export class Client {
       }
     }
     const dist = this.camera.position.distanceTo(o);
-    sfx.playShot(w.sound, o, dist);
+    sfx.playShot(w.sound, o, dist, m.id);
     if (Math.random() < (w.sniper ? 1 : 0.5)) this.effects.tracer(from, e);
     const dir = e.clone().sub(o).normalize();
     if (m.p) {
@@ -713,7 +713,7 @@ export class Client {
     this.lastShot = t;
 
     // feedback
-    sfx.playShot(w.sound, null);
+    sfx.playShot(w.sound, null, 0, 'me');
     this.vm.kick = Math.min(1.4, this.vm.kick + (w.sniper ? 1.3 : w.id === 'deagle' ? 1.1 : 0.6));
     if (!w.silenced) {
       this.vm.flash.visible = this.scope === 0;

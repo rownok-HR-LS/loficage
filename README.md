@@ -77,5 +77,6 @@ The free Render server sleeps after about 15 minutes with nobody connected. The 
 ## Credits
 
 - Textures: [Poly Haven](https://polyhaven.com), CC0.
-- Guns, soldiers, effects and all sounds are generated in code. No assets come from Counter-Strike.
+- Gunshots: real recordings from [The Free Firearm Sound Library](https://opengameart.org/node/21826) by Ben Jaszczak, Brian Nelson, Kevin Heras and Matthew Nanney, CC0. They are cut into single shots by `scripts/sfx.mjs`.
+- Guns, soldiers, effects and the other sounds are generated in code. No assets come from Counter-Strike.
 - LOFICAGE is an independent fan project and is not affiliated with Valve or Counter-Strike.

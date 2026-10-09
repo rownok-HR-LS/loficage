@@ -4,6 +4,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OUTFITS } from '../shared/constants.js';
 import { camoTexture, woodGrainTexture } from './materials.js';
+import { GUN_BUILDERS, gunMats } from './guns.js';
 
 let M = null;
 function mats() {
@@ -59,124 +60,11 @@ function cyl(parent, r1, r2, len, mat, x, y, z, seg) {
 
 // ---------------------------------------------------------------- guns
 
-function ak47(g, m) {
-  rb(g, 0.05, 0.072, 0.29, m.metal, 0, 0.03, -0.07);
-  rb(g, 0.046, 0.032, 0.25, m.metal, 0, 0.074, -0.075, 0, 0.014);
-  rb(g, 0.03, 0.022, 0.045, m.metal, 0, 0.088, -0.22);
-  rb(g, 0.058, 0.058, 0.2, m.wood, 0, 0.022, -0.32, 0, 0.012);
-  rb(g, 0.044, 0.036, 0.17, m.wood, 0, 0.075, -0.31, 0, 0.012);
-  cyl(g, 0.011, 0.011, 0.3, m.darkMetal, 0, 0.03, -0.55);
-  cyl(g, 0.013, 0.013, 0.09, m.metal, 0, 0.074, -0.43);
-  rb(g, 0.012, 0.048, 0.018, m.metal, 0, 0.068, -0.63);
-  cyl(g, 0.016, 0.016, 0.055, m.darkMetal, 0, 0.03, -0.72);
-  // curved magazine
-  const mag = new THREE.Group();
-  for (let i = 0; i < 5; i++) {
-    rb(mag, 0.034, 0.058, 0.072, m.bakelite, 0, -i * 0.043, -i * i * 0.006 - i * 0.008, -i * 0.13, 0.008);
-  }
-  mag.position.set(0, -0.02, -0.12);
-  g.add(mag);
-  rb(g, 0.034, 0.1, 0.044, m.bakelite, 0, -0.045, 0.025, 0.32);
-  rb(g, 0.01, 0.012, 0.07, m.metal, 0, -0.02, -0.04);
-  rb(g, 0.044, 0.066, 0.17, m.wood, 0, 0.012, 0.16, -0.1, 0.012);
-  rb(g, 0.046, 0.1, 0.12, m.wood, 0, -0.012, 0.28, -0.12, 0.014);
-  rb(g, 0.048, 0.115, 0.018, m.darkMetal, 0, -0.022, 0.345, -0.12);
-  cyl(g, 0.006, 0.006, 0.04, m.metal, 0.03, 0.05, -0.13).rotation.y = Math.PI / 2;
-  return { muzzle: [0, 0.03, -0.76], mag, length: 1.1 };
-}
-
-function m4a1s(g, m) {
-  rb(g, 0.046, 0.06, 0.24, m.poly, 0, 0.045, -0.06);
-  rb(g, 0.04, 0.05, 0.18, m.poly, 0, 0.002, -0.04);
-  rb(g, 0.026, 0.012, 0.37, m.darkMetal, 0, 0.082, -0.16, 0, 0.002);
-  rb(g, 0.02, 0.03, 0.03, m.darkMetal, 0, 0.1, 0.02);
-  rb(g, 0.016, 0.034, 0.02, m.darkMetal, 0, 0.098, -0.33);
-  cyl(g, 0.028, 0.028, 0.26, m.poly, 0, 0.045, -0.31, 8);
-  cyl(g, 0.01, 0.01, 0.08, m.darkMetal, 0, 0.045, -0.48);
-  cyl(g, 0.019, 0.019, 0.21, m.metal, 0, 0.045, -0.6, 18);
-  const mag = new THREE.Group();
-  rb(mag, 0.028, 0.15, 0.062, m.darkMetal, 0, -0.06, 0, 0.12, 0.006);
-  mag.position.set(0, -0.02, -0.1);
-  g.add(mag);
-  rb(g, 0.034, 0.095, 0.044, m.poly, 0, -0.045, 0.04, 0.32);
-  rb(g, 0.01, 0.012, 0.07, m.poly, 0, -0.02, -0.02);
-  cyl(g, 0.015, 0.015, 0.18, m.darkMetal, 0, 0.03, 0.15);
-  rb(g, 0.042, 0.085, 0.13, m.poly, 0, 0.005, 0.25, 0, 0.012);
-  rb(g, 0.044, 0.1, 0.02, m.rubber, 0, -0.002, 0.32);
-  return { muzzle: [0, 0.045, -0.71], mag, length: 1.0 };
-}
-
-function awp(g, m) {
-  rb(g, 0.06, 0.08, 0.55, m.green, 0, 0, -0.06, 0, 0.012);
-  rb(g, 0.05, 0.13, 0.24, m.green, 0, -0.035, 0.27, 0, 0.016);
-  rb(g, 0.045, 0.03, 0.18, m.green, 0, 0.055, 0.27, 0, 0.01);
-  rb(g, 0.052, 0.16, 0.03, m.rubber, 0, -0.03, 0.4);
-  cyl(g, 0.014, 0.016, 0.56, m.darkMetal, 0, 0.012, -0.61);
-  cyl(g, 0.022, 0.022, 0.07, m.metal, 0, 0.012, -0.92);
-  // scope
-  cyl(g, 0.022, 0.022, 0.3, m.darkMetal, 0, 0.105, -0.06, 18);
-  cyl(g, 0.036, 0.022, 0.09, m.darkMetal, 0, 0.105, -0.25, 18);
-  cyl(g, 0.03, 0.022, 0.06, m.darkMetal, 0, 0.105, 0.12, 18);
-  cyl(g, 0.033, 0.033, 0.004, m.lens, 0, 0.105, -0.296, 18);
-  const tur = cyl(g, 0.012, 0.012, 0.03, m.darkMetal, 0, 0.135, -0.06);
-  tur.rotation.x = 0;
-  tur.rotation.set(Math.PI / 2, 0, 0);
-  rb(g, 0.03, 0.04, 0.025, m.darkMetal, 0, 0.065, -0.15);
-  rb(g, 0.03, 0.04, 0.025, m.darkMetal, 0, 0.065, 0.03);
-  const bolt = new THREE.Group();
-  const handle = cyl(bolt, 0.007, 0.007, 0.06, m.metal, 0.03, 0, 0);
-  handle.rotation.y = Math.PI / 2;
-  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.014, 10, 8), m.metal);
-  knob.position.set(0.062, 0, 0);
-  bolt.add(knob);
-  bolt.position.set(0.02, 0.04, 0.09);
-  g.add(bolt);
-  const mag = new THREE.Group();
-  rb(mag, 0.044, 0.07, 0.09, m.poly, 0, -0.03, 0);
-  mag.position.set(0, -0.04, -0.03);
-  g.add(mag);
-  rb(g, 0.035, 0.09, 0.045, m.green, 0, -0.06, 0.12, 0.32);
-  return { muzzle: [0, 0.012, -0.96], mag, bolt, length: 1.3 };
-}
-
-function deagle(g, m) {
-  rb(g, 0.034, 0.046, 0.26, m.chrome, 0, 0.05, -0.08, 0, 0.005);
-  rb(g, 0.025, 0.024, 0.17, m.chrome, 0, 0.083, -0.125, 0, 0.004); // triangular barrel top
-  rb(g, 0.03, 0.03, 0.2, m.frame, 0, 0.014, -0.07, 0, 0.005);
-  for (let i = 0; i < 6; i++) rb(g, 0.036, 0.034, 0.003, m.darkMetal, 0, 0.052, 0.01 + i * 0.007, 0, 0.001); // serrations
-  rb(g, 0.006, 0.012, 0.012, m.darkMetal, 0, 0.1, -0.2);
-  rb(g, 0.02, 0.012, 0.012, m.darkMetal, 0, 0.078, 0.035); // rear sight
-  const grip = rb(g, 0.032, 0.12, 0.056, m.rubber, 0, -0.055, 0.03, 0.25, 0.01);
-  grip.userData.keep = true;
-  const guard = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.004, 6, 16, Math.PI), m.chrome);
-  guard.rotation.set(0, Math.PI / 2, Math.PI);
-  guard.position.set(0, -0.0, -0.035);
-  g.add(guard);
-  const mag = new THREE.Group();
-  rb(mag, 0.024, 0.03, 0.04, m.darkMetal, 0, 0, 0);
-  mag.position.set(0, -0.12, 0.045);
-  g.add(mag);
-  return { muzzle: [0, 0.05, -0.215], mag, length: 0.27 };
-}
-
-function knife(g, m) {
-  rb(g, 0.026, 0.032, 0.11, m.rubber, 0, -0.004, 0.02, 0, 0.01);
-  for (let i = 0; i < 4; i++) rb(g, 0.028, 0.034, 0.006, m.darkMetal, 0, -0.004, -0.015 + i * 0.022, 0, 0.002); // grip rings
-  rb(g, 0.03, 0.05, 0.012, m.darkMetal, 0, 0.004, -0.04, 0, 0.003); // guard
-  rb(g, 0.022, 0.03, 0.012, m.darkMetal, 0, -0.004, 0.08, 0, 0.004); // pommel
-  rb(g, 0.006, 0.034, 0.15, m.chrome, 0, 0.006, -0.12, 0, 0.002); // blade
-  rb(g, 0.005, 0.022, 0.05, m.chrome, 0, 0.012, -0.21, 0, 0.002); // tip
-  rb(g, 0.0065, 0.006, 0.14, m.darkMetal, 0, 0.022, -0.115, 0, 0.001); // spine
-  return { muzzle: [0, 0.01, -0.24], mag: new THREE.Group(), length: 0.3 };
-}
-
-const BUILDERS = { ak47, m4a1s, awp, deagle, knife };
-
 /** Build a gun model; userData has muzzle (Object3D), mag, bolt. */
 export function buildGun(id) {
-  const m = mats();
+  const m = gunMats();
   const g = new THREE.Group();
-  const info = BUILDERS[id](g, m);
+  const info = GUN_BUILDERS[id](g, m);
   if (!info.mag.parent) g.add(info.mag);
   const muzzle = new THREE.Object3D();
   muzzle.position.fromArray(info.muzzle);
@@ -608,7 +496,7 @@ export function buildViewmodel(id, outfitIndex) {
   const holder = new THREE.Group();
   const gun = buildGun(id);
   // the stock sits behind the camera in first person and would fill the corner
-  for (const part of gun.children) if (part.position.z > 0.125) part.visible = false;
+  for (const part of gun.children) if (part.userData.stock) part.visible = false;
   holder.add(gun);
   const pose = VM_POSE[id];
   const v = (a) => new THREE.Vector3().fromArray(a);
