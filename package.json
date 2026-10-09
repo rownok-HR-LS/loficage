@@ -1,0 +1,25 @@
+{
+  "name": "loficage",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LOFICAGE - browser multiplayer deathmatch",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "server": "node server/index.js",
+    "start": "node server/index.js",
+    "build": "vite build",
+    "loadtest": "node scripts/loadtest.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.5",
+    "three": "^0.186.1",
+    "vite": "^8.3.4"
+  }
+}

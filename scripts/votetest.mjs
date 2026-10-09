@@ -1,0 +1,22 @@
+// Headless check of the kick-bots vote.
+import { Game } from '../shared/game.js';
+let now = 10;
+const game = new Game({ now: () => now });
+const log = [];
+const join = (name) => { const h = game.connect({ send: (m) => log.push([name, m]) }); h.message({ t: 'join', name, outfit: 0, primary: 'ak47' }); return h; };
+const bots = () => [...game.players.values()].filter((p) => p.bot).length;
+const sys = () => log.filter(([, m]) => m.t === 'sys').map(([n, m]) => `${n}: ${m.text}`).slice(-1)[0];
+const a = join('A');
+console.log('1 human, bots:', bots());
+now += 40; a.message({ t: 'callvote', kind: 'kickbots' }); console.log('solo call ->', sys());
+const b = join('B'); const c = join('C');
+console.log('3 humans, bots:', bots());
+now += 40; a.message({ t: 'callvote', kind: 'kickbots' });
+console.log('vote after call:', game.voteInfo());
+b.message({ t: 'vote', yes: false }); console.log('B no ->', game.voteInfo()?.yes, 'yes,', game.voteInfo()?.no, 'no');
+c.message({ t: 'vote', yes: true }); console.log('C yes -> bots:', bots(), '|', sys());
+now += 40; b.message({ t: 'chat', text: '!addbots' }); a.message({ t: 'vote', yes: true });
+console.log('addbots vote -> bots:', bots(), '|', sys());
+now += 40; a.message({ t: 'callvote', kind: 'kickbots' }); b.message({ t: 'vote', yes: true }); console.log('kicked again -> bots:', bots());
+b.close(); c.close(); console.log('2 left, 1 human -> bots:', bots(), '|', sys());
+now += 40; a.message({ t: 'callvote', kind: 'addbots' }); console.log('expiry test call ->', sys());
