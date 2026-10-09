@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LOFICAGE</title>
+    <meta name="description" content="LOFICAGE — free-for-all deathmatch in the browser. AK-47, M4A1-S, AWP and Desert Eagle. Up to 20 players." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23161310'/%3E%3Cpath d='M32 10v14M32 40v14M10 32h14M40 32h14' stroke='%23ff8a3d' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='3' fill='%23ff8a3d'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="./assets/index-VSkpkYz2.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-USua2Z8N.css">
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+
+    <!-- ===== join screen ===== -->
+    <section id="menu" class="screen">
+      <div class="menu-panel">
+        <h1 class="logo">LOFI<span>CAGE</span></h1>
+        <p class="tagline">Free-for-all deathmatch · up to 20 players · desert town</p>
+
+        <label class="field-label" for="nick">Nickname</label>
+        <input id="nick" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Your name" />
+
+        <div class="field-label">Character</div>
+        <div class="outfits" id="outfits"></div>
+
+        <div class="field-label">Main weapon <small>(Desert Eagle is always your sidearm)</small></div>
+        <div class="weapons" id="weapons"></div>
+
+        <button id="play" class="btn-primary">Play</button>
+        <div class="server-status" id="serverStatus"><span class="dot"></span><span class="txt">Checking server…</span></div>
+        <button id="offline" class="btn-link">Practice offline with bots</button>
+        <button id="menuSettings" class="btn-link">Settings &amp; crosshair</button>
+      </div>
+
+      <div class="menu-side">
+        <div class="preview-card">
+          <canvas id="preview"></canvas>
+          <div class="preview-name" id="previewName"></div>
+        </div>
+        <div class="controls-card">
+          <h3>Controls</h3>
+          <ul>
+            <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</li>
+            <li><kbd>Mouse</kbd> aim · <kbd>Left click</kbd> shoot</li>
+            <li><kbd>Right click</kbd> AWP scope</li>
+            <li><kbd>Space</kbd> jump · <kbd>C</kbd>/<kbd>Ctrl</kbd> crouch</li>
+            <li><kbd>Shift</kbd> walk (silent)</li>
+            <li><kbd>R</kbd> reload · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>Q</kbd> switch</li>
+            <li><kbd>3</kbd> knife: <kbd>Left</kbd> slash · <kbd>Right</kbd> stab · <kbd>F</kbd> inspect</li>
+            <li><kbd>B</kbd> change weapon · <kbd>Tab</kbd> scores</li>
+            <li><kbd>Y</kbd> chat · <kbd>Esc</kbd> menu</li>
+          </ul>
+        </div>
+      </div>
+      <div class="desktop-only" id="desktopOnly">
+        <h2>Computer needed</h2>
+        <p>LOFICAGE is played with a mouse and keyboard. Open this link on a laptop or desktop computer.</p>
+      </div>
+    </section>
+
+    <!-- ===== connecting ===== -->
+    <section id="connecting" class="screen hidden">
+      <div class="connect-box">
+        <div class="spinner"></div>
+        <h2 id="connectTitle">Connecting…</h2>
+        <p id="connectText">Joining the match.</p>
+        <button id="connectCancel" class="btn-link">Back</button>
+      </div>
+    </section>
+
+    <!-- ===== HUD ===== -->
+    <section id="hud" class="hidden">
+      <div id="crosshair" class="xh"><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><b class="dot"></b></div>
+      <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
+      <div id="damageRing"></div>
+      <div id="scope"><div class="scope-lens"></div></div>
+      <div id="aimName"></div>
+
+      <div id="topbar">
+        <div class="tb-cell"><span class="tb-label">YOU</span><span id="myKills">0</span></div>
+        <div class="tb-timer" id="timer">10:00</div>
+        <div class="tb-cell"><span class="tb-label">LEADER</span><span id="leader">—</span></div>
+      </div>
+
+      <div id="killfeed"></div>
+      <div id="votePanel" class="hidden">
+        <div class="vp-title" id="voteTitle"></div>
+        <div class="vp-sub" id="voteSub"></div>
+        <div class="vp-row"><span><kbd>F1</kbd> Yes</span><span><kbd>F2</kbd> No</span><span class="vp-count" id="voteCount"></span></div>
+      </div>
+      <div id="chatlog"></div>
+      <div id="chatbox" class="hidden"><span>Say:</span><input id="chatInput" maxlength="120" autocomplete="off" /></div>
+
+      <div id="vitals">
+        <div class="vital"><svg viewBox="0 0 24 24"><path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/></svg><span id="hp">100</span></div>
+        <div class="vital armor"><svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5z"/></svg><span>100</span></div>
+      </div>
+      <div id="ammo">
+        <div class="weapon-name" id="weaponName">AK-47</div>
+        <div class="ammo-count"><span id="mag">30</span><small>/ <span id="reserve">90</span></small></div>
+        <div class="slots"><span id="slot1">1</span><span id="slot2">2</span><span id="slot3">3</span></div>
+      </div>
+      <div id="ping" class="ping"></div>
+      <div id="reloadBar"><i></i></div>
+      <div id="toast"></div>
+
+      <div id="death" class="hidden">
+        <div class="death-title">YOU WERE KILLED</div>
+        <div class="death-by" id="deathBy"></div>
+        <div class="death-timer" id="deathTimer"></div>
+        <div class="death-hint">Press <kbd>B</kbd> to change your weapon</div>
+      </div>
+
+      <div id="scoreboard" class="hidden">
+        <div class="sb-head"><span>LOFICAGE · Deathmatch</span><span id="sbTimer"></span></div>
+        <table>
+          <thead><tr><th>#</th><th class="l">Player</th><th>K</th><th>D</th><th>HS%</th><th>Ping</th></tr></thead>
+          <tbody id="sbBody"></tbody>
+        </table>
+      </div>
+
+      <div id="loadout" class="hidden">
+        <h2>Choose your main weapon</h2>
+        <div class="weapons" id="loadoutWeapons"></div>
+        <p class="hint">Applies right away if you just spawned, otherwise on your next life. Press <kbd>B</kbd> to close.</p>
+      </div>
+
+      <div id="matchEnd" class="hidden">
+        <div class="me-title">MATCH OVER</div>
+        <div class="me-winner" id="meWinner"></div>
+        <ol class="me-list" id="meList"></ol>
+        <div class="me-next" id="meNext"></div>
+      </div>
+    </section>
+
+    <!-- ===== pause menu ===== -->
+    <section id="pause" class="screen hidden">
+      <div class="pause-panel">
+        <h2 id="pauseTitle">Paused</h2>
+        <button id="resume" class="btn-primary">Resume</button>
+        <div class="pause-section" id="botSection">
+          <h3>Bots</h3>
+          <p class="bot-status" id="botStatus"></p>
+          <button id="botVote" class="btn-ghost wide"></button>
+          <div class="vote-buttons hidden" id="voteButtons"><button id="voteYes" class="btn-ghost">Vote yes (F1)</button><button id="voteNo" class="btn-ghost">Vote no (F2)</button></div>
+        </div>
+        <h3>Game</h3>
+        <label class="setting">Mouse sensitivity <span id="sensVal"></span><input type="range" id="sens" min="0.3" max="6" step="0.05" /></label>
+        <label class="setting">Volume <span id="volVal"></span><input type="range" id="vol" min="0" max="1" step="0.05" /></label>
+        <label class="setting">Graphics
+          <select id="quality"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+        </label>
+        <label class="setting">Player highlight
+          <select id="rim"><option value="off">Off</option><option value="subtle">Subtle edge glow (default)</option><option value="strong">Strong edge glow</option></select>
+        </label>
+        <label class="setting">Field of view <span id="fovVal"></span><input type="range" id="fov" min="70" max="100" step="1" /></label>
+        <div class="pause-section">
+          <h3>Crosshair</h3>
+          <div class="xh-preview"><div id="xhPreview" class="xh"><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><b class="dot"></b></div></div>
+          <label class="setting">Style
+            <select id="xhStyle"><option value="dynamic">Dynamic (opens up when you move or shoot)</option><option value="static">Static (always the same)</option></select>
+          </label>
+          <div class="setting">Colour
+            <div class="xh-colors" id="xhColors"></div>
+          </div>
+          <label class="setting">Length <span id="xhLenVal"></span><input type="range" id="xhLen" min="0" max="16" step="1" /></label>
+          <label class="setting">Thickness <span id="xhThVal"></span><input type="range" id="xhTh" min="1" max="5" step="0.5" /></label>
+          <label class="setting">Gap <span id="xhGapVal"></span><input type="range" id="xhGap" min="-3" max="14" step="1" /></label>
+          <label class="setting">Opacity <span id="xhOpVal"></span><input type="range" id="xhOp" min="0.3" max="1" step="0.05" /></label>
+          <div class="xh-toggles">
+            <label><input type="checkbox" id="xhOutline" /> Black outline</label>
+            <label><input type="checkbox" id="xhDot" /> Centre dot</label>
+          </div>
+          <button id="xhReset" class="btn-link">Reset crosshair</button>
+        </div>
+        <div class="pause-row">
+          <button id="fullscreen" class="btn-ghost">Full screen</button>
+          <button id="leave" class="btn-ghost danger">Leave match</button>
+        </div>
+      </div>
+    </section>
+
+  </body>
+</html>
